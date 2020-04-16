@@ -1,0 +1,7 @@
+version: '3.5'
+services:
+  talespire-web:
+    image: registry.discord.lostark.creadth.com/talespire-web
+    build:
+      context: .
+      dockerfile: ./Creadth.Talespire.DungeonGenerator/Dockerfile

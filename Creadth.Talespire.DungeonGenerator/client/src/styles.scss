@@ -1,0 +1,58 @@
+@import "~@angular/material/prebuilt-themes/indigo-pink.css";
+
+a {
+  color: #0366d6;
+}
+
+code {
+  color: #e01a76;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.card.page {
+  min-width: 20vh;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+form mat-form-field.full-width {
+  width: 100%;
+}
+
+form mat-form-field {
+  padding: 5px 0;
+}
+
+mat-drawer-container.content {
+  height: 100%;
+}
+
+@media (min-width: 950px) {
+  .mobile-content {
+    display: none !important;
+  }
+
+}
+
+@media (max-width: 950px) {
+  .desktop-content {
+    display: none !important;
+  }
+}
+
+
+

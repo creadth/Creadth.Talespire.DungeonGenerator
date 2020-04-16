@@ -1,0 +1,28 @@
+<body>
+<mat-toolbar color="accent">
+    <button
+            type="button"
+            aria-label="Toggle sidenav"
+            mat-icon-button
+            class="mobile-content"
+            (click)="drawer.toggle();">
+        <mat-icon aria-label="Side nav toggle icon">menu</mat-icon>
+    </button>
+    <a mat-button routerLink="/" color="white">Creadth | TS</a>
+    <div class="desktop-content">
+        <a mat-button color="white" routerLink="/slab/import-dungeon">Dungeon Import</a>
+        <a mat-button color="white" routerLink="/slab/s2j">Slab to Json</a>
+        <a mat-button color="white" routerLink="/slab/j2s">Json to Slab</a>
+        <a mat-button color="white" href="/swagger">API Documentation</a>
+    </div>
+</mat-toolbar>
+<mat-drawer-container class="content" autosize>
+    <mat-drawer #drawer mode="side">
+        <app-nav-menu></app-nav-menu>
+    </mat-drawer>
+    <main>
+        <br/>
+        <router-outlet></router-outlet>
+    </main>
+</mat-drawer-container>
+</body>

@@ -1,0 +1,30 @@
+<div class="container">
+    <div fxLayout="row" fxLayoutAlign="center center" class="content">
+        <mat-card class="card page">
+            <mat-card-title fxLayout="row" fxLayoutAlign="center center">
+                <h2>Import Dungeon</h2>
+            </mat-card-title>
+            <mat-card-content>
+                <p>You can import awesome generated dungeon using this <a
+                        href="https://watabou.itch.io/one-page-dungeon" target="_blank">One-Page Dungeon Generator</a>
+                    by watabou.</p>
+                <p>Generate the dungeon for your liking, press J to download json data and paste it here.</p>
+                <p>Press the convert button and get dungeon slab.</p>
+                <form [formGroup]="mainForm" (ngSubmit)="submit()" novalidate>
+                    <input type="file" (change)="onFileChanged($event.target.files)" formControlName="data"/>
+                    <mat-form-field class="full-width">
+                        <mat-label>Scale</mat-label>
+                        <input type="number" formControlName="scale" matInput min="3" max="5"/>
+                        <mat-hint>Scale the dungeon. Default is 3. Change this if you have some weirdness with walls
+                        </mat-hint>
+                    </mat-form-field>
+                    <div fxLayout="row" fxLayoutAlign="end center">
+                        <button mat-stroked-button color="accent" type="submit">Convert</button>
+                    </div>
+                </form>
+                <br/>
+                <code *ngIf="slabData">{{slabData}}</code>
+            </mat-card-content>
+        </mat-card>
+    </div>
+</div>

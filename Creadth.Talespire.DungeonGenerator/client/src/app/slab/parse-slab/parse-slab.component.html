@@ -1,0 +1,24 @@
+<div class="container">
+    <div fxLayout="row" fxLayoutAlign="center center" class="content">
+        <mat-card class="card page">
+            <mat-card-title fxLayout="row" fxLayoutAlign="center center">
+                <h2>Slab2Json</h2>
+            </mat-card-title>
+            <mat-card-content>
+                <form [formGroup]="mainForm" (ngSubmit)="submit()" novalidate>
+                    <mat-form-field (paste)="paste($event)" class="full-width">
+                        <mat-label>Slab</mat-label>
+                        <mat-error *ngIf="mainForm.controls.slab.invalid">We need to convert something</mat-error>
+                        <textarea formControlName="slab" matInput matTextareaAutosize="true" ></textarea>
+                        <mat-hint>Paste Slab here to get json</mat-hint>
+                    </mat-form-field>
+                    <div fxLayout="row" fxLayoutAlign="end center">
+                    <button mat-stroked-button color="accent" type="submit">Convert</button>
+                    </div>
+                </form>
+                <br/>
+                <code *ngIf="slabJson">{{slabJson}}</code>
+            </mat-card-content>
+        </mat-card>
+    </div>
+</div>
