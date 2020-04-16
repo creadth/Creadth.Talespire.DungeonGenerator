@@ -117,6 +117,10 @@ export class SlabService extends ServiceBase {
         return _observableOf<string>(<any>null);
     }
 
+    /**
+     * Convert Slab to Json
+     * @param data Slab in TS
+     */
     getData(data: string): Observable<SlabModel> {
         let url_ = this.baseUrl + "/api/slab/export/json";
         url_ = url_.replace(/[?&]$/, "");

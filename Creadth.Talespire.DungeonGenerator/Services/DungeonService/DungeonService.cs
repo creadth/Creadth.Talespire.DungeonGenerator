@@ -211,17 +211,34 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                 var left = dictionary[(cell.Pos.X + leftCors.X, cell.Pos.Y + leftCors.Y)];
                 var right = dictionary[(cell.Pos.X + rightCors.X, cell.Pos.Y + rightCors.Y)];
                 var stackPropagation = new Stack<(CellData, Point)>();
-                left.Type = CellType.WallWithTorch;
-                right.Type = CellType.WallWithTorch;
-                stackPropagation.Push((left, propagationAxis.ToPoint()));
-                stackPropagation.Push((right, propagationAxis.GetOppositeDirection().ToPoint()));
+                //cross-doors
+                if (left.Type == CellType.WallWithTorch)
+                {
+                    BuildDoorCorner(left, dictionary);
+                }
+                else
+                {
+                    left.Type = CellType.WallWithTorch;
+                    stackPropagation.Push((left, propagationAxis.ToPoint()));
+                }
+
+                if (right.Type == CellType.WallWithTorch)
+                {
+                    BuildDoorCorner(right, dictionary);
+                }
+                else
+                {
+                    stackPropagation.Push((right, propagationAxis.GetOppositeDirection().ToPoint()));
+                    right.Type = CellType.WallWithTorch;
+                }
+
                 while (stackPropagation.Count > 0)
                 {
                     var (propCell, dir) = stackPropagation.Pop();
                     propCell.Decorations.Clear();
                     var nextCors = (propCell.Pos.X + dir.X, propCell.Pos.Y + dir.Y);
                     dictionary.TryGetValue(nextCors, out var nextCell);
-                    if (propCell.Type != CellType.WallWithTorch)
+                    if (propCell.Type != CellType.WallWithTorch && !propCell.Type.IsCornerWall())
                     {
                         propCell.Type = CellType.Wall;
                     }
@@ -234,7 +251,17 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                     else
                     {
                         if (propCell.Type.IsWall() && nextCell == null)
+                        {
                             propCell.Type = CellType.CornerWall;
+                            propCell.Direction = propCell.Direction switch
+                            {
+                                Direction.Left => Direction.Down,
+                                Direction.Up => Direction.Up,
+                                Direction.Right => Direction.Right,
+                                Direction.Down => Direction.Right,
+                                _ => propCell.Direction
+                            };
+                        }
                         else
                         {
                             propCell.Direction = propagationAxis.GetAdjacentClockwise();
@@ -251,71 +278,103 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                 dictionary.TryGetValue((cell.Pos.X - 1, cell.Pos.Y), out var left);
                 dictionary.TryGetValue((cell.Pos.X + 1, cell.Pos.Y), out var right);
                 //TODO: fix code dup.. somehow
-                if (cell.Type == CellType.Floor)
+                if (cell.Type != CellType.Floor) continue;
+                if (left.Type.IsWall())
                 {
-                    if (left.Type.IsWall())
+                    if (upper.Type.IsWall() && left.Direction == Direction.Up && upper.Direction == Direction.Left)
                     {
-                        if (upper.Type.IsWall() && left.Direction == Direction.Up && upper.Direction == Direction.Left)
+                        cell.Decorations.Add(new DecorationData
                         {
-                            cell.Decorations.Add(new DecorationData
-                            {
-                                Type = DecorationType.Pillar,
-                                Center = new Vector3(-.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
-                                    -.5f * PillarDimensions),
-                                Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
-                                    .5f * PillarDimensions)
-                            });
-                        }
-
-                        if (bottom.Type.IsWall() && bottom.Direction == Direction.Left &&
-                            left.Direction == Direction.Down)
-                        {
-                            //bot-left pillar
-                            cell.Decorations.Add(new DecorationData
-                            {
-                                Type = DecorationType.Pillar,
-                                Center = new Vector3(.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
-                                    -.5f * PillarDimensions),
-                                Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
-                                    .5f * PillarDimensions)
-                            });
-                        }
+                            Type = DecorationType.Pillar,
+                            Center = new Vector3(-.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
+                                -.5f * PillarDimensions),
+                            Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
+                                .5f * PillarDimensions)
+                        });
                     }
 
-                    if (right.Type.IsWall())
+                    if (bottom.Type.IsWall() && bottom.Direction == Direction.Left &&
+                        left.Direction == Direction.Down)
                     {
-                        if (upper.Type.IsWall() && right.Direction == Direction.Up && upper.Direction == Direction.Right)
+                        //bot-left pillar
+                        cell.Decorations.Add(new DecorationData
                         {
-                            //top-right pillar
-                            cell.Decorations.Add(new DecorationData
-                            {
-                                Type = DecorationType.Pillar,
-                                Center = new Vector3(-.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
-                                    .5f * PillarDimensions),
-                                Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
-                                    .5f * PillarDimensions)
-                            });
-                        }
-
-                        if (bottom.Type.IsWall() && bottom.Direction == Direction.Right &&
-                            right.Direction == Direction.Down)
-                        {
-                            //bot-left pillar
-                            cell.Decorations.Add(new DecorationData
-                            {
-                                Type = DecorationType.Pillar,
-                                Center = new Vector3(.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
-                                    .5f * PillarDimensions),
-                                Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
-                                    .5f * PillarDimensions)
-                            });
-                        }
+                            Type = DecorationType.Pillar,
+                            Center = new Vector3(.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
+                                -.5f * PillarDimensions),
+                            Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
+                                .5f * PillarDimensions)
+                        });
                     }
+                }
+
+                if (!right.Type.IsWall()) continue;
+                if (upper.Type.IsWall() && right.Direction == Direction.Up && upper.Direction == Direction.Right)
+                {
+                    //top-right pillar
+                    cell.Decorations.Add(new DecorationData
+                    {
+                        Type = DecorationType.Pillar,
+                        Center = new Vector3(-.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
+                            .5f * PillarDimensions),
+                        Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
+                            .5f * PillarDimensions)
+                    });
+                }
+
+                if (bottom.Type.IsWall() && bottom.Direction == Direction.Right &&
+                    right.Direction == Direction.Down)
+                {
+                    //bot-left pillar
+                    cell.Decorations.Add(new DecorationData
+                    {
+                        Type = DecorationType.Pillar,
+                        Center = new Vector3(.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
+                            .5f * PillarDimensions),
+                        Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
+                            .5f * PillarDimensions)
+                    });
                 }
             }
 
 
             return dictionary.Values;
         }
+
+        private static void BuildDoorCorner(CellData cell, IDictionary<(int x, int y), CellData> dictionary)
+        {
+            dictionary.TryGetValue((cell.Pos.X, cell.Pos.Y - 1), out var upper);
+            dictionary.TryGetValue((cell.Pos.X, cell.Pos.Y + 1), out var bottom);
+            dictionary.TryGetValue((cell.Pos.X - 1, cell.Pos.Y), out var left);
+            dictionary.TryGetValue((cell.Pos.X + 1, cell.Pos.Y), out var right);
+            if (upper?.Decorations.Any(x => x.Type == DecorationType.SingleDoor) == true)
+            {
+                if (left?.Decorations.Any(x => x.Type == DecorationType.SingleDoor) == true)
+                {
+                    cell.Type = CellType.CornerWall;
+                    cell.Direction = Direction.Right;
+                    return;
+                }
+                if (right?.Decorations.Any(x => x.Type == DecorationType.SingleDoor) != true) return;
+                cell.Type = CellType.CornerWall;
+                cell.Direction = Direction.Down;
+                return;
+            }
+
+            if (bottom?.Decorations.Any(x => x.Type == DecorationType.SingleDoor) != true) return;
+            if (left?.Decorations.Any(x => x.Type == DecorationType.SingleDoor) == true)
+            {
+                cell.Type = CellType.CornerWall;
+                cell.Direction = Direction.Up;
+                return;
+            }
+
+            if (right?.Decorations.Any(x => x.Type == DecorationType.SingleDoor) != true) return;
+            cell.Type = CellType.CornerWall;
+            cell.Direction = Direction.Left;
+
+
+        }
+
     }
 }
