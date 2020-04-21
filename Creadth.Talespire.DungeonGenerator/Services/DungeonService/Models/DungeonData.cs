@@ -12,6 +12,7 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService.Models
 
     public class Rect
     {
+        public bool Rotunda { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
         public int W { get; set; }

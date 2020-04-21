@@ -11,12 +11,8 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
 {
     public class DungeonService
     {
-        private const float FloorDimensions = 1f;
-        private const float FloorHeight = .5f;
-
-        private const float PillarDimensions = .5f;
-        private const float PillarHeight = 2f;
-
+        private static readonly Vector3 FloorExtents = new Vector3(.5f, .25f, .5f);
+        private static readonly Vector3 PillarExtents = new Vector3(.25f, 1f, .25f);
         private static readonly Vector3 DoorExtents = new Vector3(.5f, .875f, .25f);
 
         public SlabModel ConvertDungeonToSlab(DungeonData data)
@@ -29,9 +25,9 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                 {
                     Id = cell.Type.ToAssetId(),
                     Bounds = new Bounds(
-                        new Vector3((cell.Pos.Y + 0.5f) * FloorDimensions, .5f * FloorHeight,
-                            (cell.Pos.X + 0.5f) * FloorDimensions),
-                        new Vector3(FloorDimensions * .5f, .5f * FloorHeight, FloorDimensions * .5f)),
+                        new Vector3((2*cell.Pos.Y + 1) * FloorExtents.X, FloorExtents.Y,
+                            (2*cell.Pos.X + 1) * FloorExtents.Z),
+                        FloorExtents),
                     Rotation = (byte) cell.Direction
                 };
                 assets.Add(cellAsset);
@@ -55,135 +51,27 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
             //TODO: this is dumb. Undumb it
             var dictionary = new Dictionary<(int x, int y), CellData>();
 
-            static void AddCellNeighbour(CellData cellData, CellData other, Direction neighbourDirection)
-            {
-                if (cellData.Type.IsFloor())
-                    return;
-
-                if (cellData.Type.IsWall() && cellData.Direction == neighbourDirection)
-                {
-                    cellData.Type = CellType.Floor;
-                    return;
-                }
-
-                if (!cellData.Type.IsCornerWall() || cellData.Direction != neighbourDirection &&
-                    cellData.Direction.GetAdjacentClockwise() != neighbourDirection)
-                    return;
-                cellData.Type = CellType.Wall;
-                if (neighbourDirection == cellData.Direction)
-                {
-                    cellData.Direction = cellData.Direction.GetAdjacentClockwise();
-                }
-            }
+            #region local helpers
 
             void PushData(CellData cellData)
             {
-                //upper
-                if (dictionary.TryGetValue((cellData.Pos.X, cellData.Pos.Y - 1), out var upper))
+                foreach (var dir in Enum.GetValues(typeof(Direction)).Cast<Direction>())
                 {
-                    AddCellNeighbour(upper, cellData, Direction.Down);
-                    AddCellNeighbour(cellData, upper, Direction.Up);
+                    var cors = dir.ToPoint();
+                    if (!dictionary.TryGetValue((cellData.Pos.X + cors.X, cellData.Pos.Y + cors.Y), out var neighbour)) continue;
+                    AddCellNeighbour(cellData, neighbour, dir);
+                    AddCellNeighbour(neighbour, cellData, dir.GetOppositeDirection());
                 }
-
-                //right
-                if (dictionary.TryGetValue((cellData.Pos.X + 1, cellData.Pos.Y), out var right))
-                {
-                    AddCellNeighbour(right, cellData, Direction.Left);
-                    AddCellNeighbour(cellData, right, Direction.Right);
-                }
-
-                //bottom
-                if (dictionary.TryGetValue((cellData.Pos.X, cellData.Pos.Y + 1), out var bottom))
-                {
-                    AddCellNeighbour(bottom, cellData, Direction.Up);
-                    AddCellNeighbour(cellData, bottom, Direction.Down);
-                }
-
-                //left
-                if (dictionary.TryGetValue((cellData.Pos.X - 1, cellData.Pos.Y), out var left))
-                {
-                    AddCellNeighbour(left, cellData, Direction.Right);
-                    AddCellNeighbour(cellData, left, Direction.Left);
-                }
-
                 dictionary[(cellData.Pos.X, cellData.Pos.Y)] = cellData;
             }
 
+            #endregion
+
+
             foreach (var rect in data.Rects)
             {
-                for (var x = 0; x < rect.W; x++)
-                for (var y = 0; y < rect.H; y++)
+                foreach (var cell in RenderRectRoom(rect))
                 {
-                    var (tx, ty) = (x + rect.X, y + rect.Y);
-                    var cell = new CellData {Pos = new Point(tx, ty)};
-
-                    // ReSharper disable once ConvertIfStatementToSwitchStatement
-                    if (x == 0 && y == 0)
-                    {
-                        cell.Type = CellType.CornerWall;
-                        cell.Direction = Direction.Left;
-                        PushData(cell);
-                        continue;
-                    }
-
-                    if (x == 0 && y == rect.H - 1)
-                    {
-                        cell.Type = CellType.CornerWall;
-                        cell.Direction = Direction.Down;
-                        PushData(cell);
-                        continue;
-                    }
-
-                    if (x == rect.W - 1 && y == 0)
-                    {
-                        cell.Type = CellType.CornerWall;
-                        cell.Direction = Direction.Up;
-                        PushData(cell);
-                        continue;
-                    }
-
-                    if (x == rect.W - 1 && y == rect.H - 1)
-                    {
-                        cell.Type = CellType.CornerWall;
-                        cell.Direction = Direction.Right;
-                        PushData(cell);
-                        continue;
-                    }
-
-                    if (x == 0)
-                    {
-                        cell.Type = CellType.Wall;
-                        cell.Direction = Direction.Left;
-                        PushData(cell);
-                        continue;
-                    }
-
-                    if (y == 0)
-                    {
-                        cell.Type = CellType.Wall;
-                        cell.Direction = Direction.Up;
-                        PushData(cell);
-                        continue;
-                    }
-
-                    if (x == rect.W - 1)
-                    {
-                        cell.Type = CellType.Wall;
-                        cell.Direction = Direction.Right;
-                        PushData(cell);
-                        continue;
-                        ;
-                    }
-
-                    if (y == rect.H - 1)
-                    {
-                        cell.Type = CellType.Wall;
-                        cell.Direction = Direction.Down;
-                        PushData(cell);
-                        continue;
-                    }
-
-                    cell.Type = CellType.Floor;
                     PushData(cell);
                 }
             }
@@ -199,7 +87,7 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                     Type = DecorationType.SingleDoor,
                     Extents = actualExtents,
                     Direction = door.Dir.Y == 0 ? Direction.Left : Direction.Up,
-                    Center = new Vector3(actualExtents.X * Math.Abs(door.Dir.Y), DoorExtents.Y + .5f * FloorHeight,
+                    Center = new Vector3(actualExtents.X * Math.Abs(door.Dir.Y), DoorExtents.Y + FloorExtents.Y,
                         actualExtents.Z * Math.Abs(door.Dir.X))
                 };
                 if (cell == null) continue;
@@ -279,17 +167,16 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                 dictionary.TryGetValue((cell.Pos.X + 1, cell.Pos.Y), out var right);
                 //TODO: fix code dup.. somehow
                 if (cell.Type != CellType.Floor) continue;
-                if (left.Type.IsWall())
+                if (left?.Type.IsWall() == true)
                 {
                     if (upper.Type.IsWall() && left.Direction == Direction.Up && upper.Direction == Direction.Left)
                     {
                         cell.Decorations.Add(new DecorationData
                         {
                             Type = DecorationType.Pillar,
-                            Center = new Vector3(-.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
-                                -.5f * PillarDimensions),
-                            Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
-                                .5f * PillarDimensions)
+                            Center = new Vector3(-PillarExtents.X, PillarExtents.Y + FloorExtents.Y,
+                                -PillarExtents.Z),
+                            Extents = PillarExtents
                         });
                     }
 
@@ -300,25 +187,23 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                         cell.Decorations.Add(new DecorationData
                         {
                             Type = DecorationType.Pillar,
-                            Center = new Vector3(.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
-                                -.5f * PillarDimensions),
-                            Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
-                                .5f * PillarDimensions)
+                            Center = new Vector3(PillarExtents.X, PillarExtents.Y + FloorExtents.Y,
+                                -PillarExtents.Z),
+                            Extents = PillarExtents
                         });
                     }
                 }
 
-                if (!right.Type.IsWall()) continue;
+                if (right?.Type.IsWall() != true) continue;
                 if (upper.Type.IsWall() && right.Direction == Direction.Up && upper.Direction == Direction.Right)
                 {
                     //top-right pillar
                     cell.Decorations.Add(new DecorationData
                     {
                         Type = DecorationType.Pillar,
-                        Center = new Vector3(-.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
-                            .5f * PillarDimensions),
-                        Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
-                            .5f * PillarDimensions)
+                        Center = new Vector3(-PillarExtents.X, PillarExtents.Y + FloorExtents.Y,
+                            PillarExtents.Z),
+                        Extents = PillarExtents
                     });
                 }
 
@@ -329,16 +214,127 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                     cell.Decorations.Add(new DecorationData
                     {
                         Type = DecorationType.Pillar,
-                        Center = new Vector3(.5f * PillarDimensions, .5f * (PillarHeight + FloorHeight),
-                            .5f * PillarDimensions),
-                        Extents = new Vector3(.5f * PillarDimensions, .5f * PillarHeight,
-                            .5f * PillarDimensions)
+                        Center = new Vector3(PillarExtents.X, PillarExtents.Y + FloorExtents.Y,
+                            PillarExtents.Z),
+                        Extents = PillarExtents
                     });
                 }
             }
 
 
             return dictionary.Values;
+        }
+
+        private static void AddCellNeighbour(CellData cellData, CellData other, Direction neighbourDirection)
+        {
+            if (cellData.Type.IsFloor()) return;
+
+            if (cellData.Type.IsWall() && cellData.Direction == neighbourDirection)
+            {
+                cellData.Type = CellType.Floor;
+                return;
+            }
+
+            if (!cellData.Type.IsCornerWall() || cellData.Direction != neighbourDirection && cellData.Direction.GetAdjacentClockwise() != neighbourDirection) return;
+            cellData.Type = CellType.Wall;
+            if (neighbourDirection == cellData.Direction)
+            {
+                cellData.Direction = cellData.Direction.GetAdjacentClockwise();
+            }
+        }
+
+        private static IEnumerable<CellData> RenderRectRoom(Rect rect)
+        {
+            for (var x = 0; x < rect.W; x++)
+            for (var y = 0; y < rect.H; y++)
+            {
+                var (tx, ty) = (x + rect.X, y + rect.Y);
+                var cell = new CellData {Pos = new Point(tx, ty)};
+
+                // ReSharper disable once ConvertIfStatementToSwitchStatement
+                if (x == 0 && y == 0)
+                {
+                    cell.Type = CellType.CornerWall;
+                    cell.Direction = Direction.Left;
+                    yield return cell;
+                    continue;
+                }
+
+                if (x == 0 && y == rect.H - 1)
+                {
+                    cell.Type = CellType.CornerWall;
+                    cell.Direction = Direction.Down;
+                    yield return cell;
+                    continue;
+                }
+
+                if (x == rect.W - 1 && y == 0)
+                {
+                    cell.Type = CellType.CornerWall;
+                    cell.Direction = Direction.Up;
+                    yield return cell;
+                    continue;
+                }
+
+                if (x == rect.W - 1 && y == rect.H - 1)
+                {
+                    cell.Type = CellType.CornerWall;
+                    cell.Direction = Direction.Right;
+                    yield return cell;
+                    continue;
+                }
+
+                if (x == 0)
+                {
+                    cell.Type = CellType.Wall;
+                    cell.Direction = Direction.Left;
+                    yield return cell;
+                    continue;
+                }
+
+                if (y == 0)
+                {
+                    cell.Type = CellType.Wall;
+                    cell.Direction = Direction.Up;
+                    yield return cell;
+                    continue;
+                }
+
+                if (x == rect.W - 1)
+                {
+                    cell.Type = CellType.Wall;
+                    cell.Direction = Direction.Right;
+                    yield return cell;
+                    continue;
+                }
+
+                if (y == rect.H - 1)
+                {
+                    cell.Type = CellType.Wall;
+                    cell.Direction = Direction.Down;
+                    yield return cell;
+                    continue;
+                }
+
+                cell.Type = CellType.Floor;
+                yield return cell;
+            }
+        }
+
+        private static IEnumerable<CellData> RenderRotunda(Rect rect)
+        {
+            var radX = rect.W / 2;
+            var radY = rect.H / 2;
+            for (var x = 0; x < rect.W; x++)
+            for (var y = 0; y < rect.H; y++)
+            {
+                var cx = x - radX;
+                var cy = y - radY;
+                if (cx * cx + cy * cy <= radX * radY)
+                {
+                    yield return new CellData {Type = CellType.Floor, Direction = Direction.Left, Pos = new Point(x + rect.X, y + rect.Y)};
+                }
+            }
         }
 
         private static void BuildDoorCorner(CellData cell, IDictionary<(int x, int y), CellData> dictionary)

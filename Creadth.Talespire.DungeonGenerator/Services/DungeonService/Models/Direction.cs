@@ -34,10 +34,10 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService.Models
         {
             return dir switch
             {
-                Direction.Down => new Point(0, -1),
+                Direction.Down => new Point(0, 1),
                 Direction.Left => new Point(-1, 0),
                 Direction.Right => new Point(1, 0),
-                Direction.Up => new Point(0, 1),
+                Direction.Up => new Point(0, -1),
                 _ => throw new ArgumentOutOfRangeException(nameof(dir))
             };
         }

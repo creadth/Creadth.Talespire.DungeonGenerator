@@ -16,10 +16,10 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService.Models
     public static class CellTypeExtensions
     {
 
-        private static Guid Floor = Guid.Parse("d5900784-9510-4cf7-b017-f369448d0d52");
-        private static Guid CornerWall = Guid.Parse("fdd3c8dc-9c94-4a63-a7d9-10ae36d07fe7");
-        private static Guid Wall = Guid.Parse("ed0ad169-3248-411a-9eb0-4aada656fb61");
-        private static Guid WallWithTorch = Guid.Parse("7e51a34b-b25f-485c-b1c0-a937a936e4c2");
+        private static readonly Guid Floor = Guid.Parse("d5900784-9510-4cf7-b017-f369448d0d52");
+        private static readonly Guid CornerWall = Guid.Parse("fdd3c8dc-9c94-4a63-a7d9-10ae36d07fe7");
+        private static readonly Guid Wall = Guid.Parse("ed0ad169-3248-411a-9eb0-4aada656fb61");
+        private static readonly Guid WallWithTorch = Guid.Parse("7e51a34b-b25f-485c-b1c0-a937a936e4c2");
 
         public static bool IsWall(this CellType type)
         {
