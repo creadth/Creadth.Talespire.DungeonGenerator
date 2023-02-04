@@ -14,5 +14,7 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService.Models
         {
             Decorations = new List<DecorationData>();
         }
+
+
     }
 }

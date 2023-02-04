@@ -12,8 +12,7 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
     public class DungeonService
     {
         private static readonly Vector3 FloorExtents = new Vector3(.5f, .25f, .5f);
-        private static readonly Vector3 PillarExtents = new Vector3(.25f, 1f, .25f);
-        private static readonly Vector3 DoorExtents = new Vector3(.5f, .875f, .25f);
+        private const float PillarHeight = .5f;
 
         public SlabModel ConvertDungeonToSlab(DungeonData data)
         {
@@ -25,23 +24,22 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                 {
                     Id = cell.Type.ToAssetId(),
                     Bounds = new Bounds(
-                        new Vector3((2*cell.Pos.Y + 1) * FloorExtents.X, FloorExtents.Y,
-                            (2*cell.Pos.X + 1) * FloorExtents.Z),
-                        FloorExtents),
-                    Rotation = (byte) cell.Direction
+                        new Vector3(cell.Pos.Y, 0, cell.Pos.X),
+                        Vector3.Zero),
+                    Rotation = cell.Direction.ToAssetDirection()
                 };
                 assets.Add(cellAsset);
                 assets.AddRange(cell.Decorations.Select(decoration => new AssetModel
                 {
-                    Bounds = new Bounds(cellAsset.Bounds.Center + decoration.Center, decoration.Extents),
-                    Rotation = (byte)decoration.Direction,
+                    Bounds = new Bounds(decoration.Center + cellAsset.Bounds.Center, Vector3.Zero),
+                    Rotation = decoration.Direction.ToAssetDirection(),
                     Id = decoration.Type.ToAssetId()
                 }));
             }
 
             return new SlabModel
             {
-                Version = 1,
+                Version = 2,
                 Assets = assets
             };
         }
@@ -80,15 +78,12 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
             foreach (var door in data.Doors)
             {
                 dictionary.TryGetValue((door.X-Math.Abs(door.Dir.X), door.Y-Math.Abs(door.Dir.Y)), out var cell);
-                var actualExtents =
-                    door.Dir.Y == 0 ? DoorExtents : new Vector3(DoorExtents.Z, DoorExtents.Y, DoorExtents.X);
                 var doorData = new DecorationData
                 {
                     Type = DecorationType.SingleDoor,
-                    Extents = actualExtents,
                     Direction = door.Dir.Y == 0 ? Direction.Left : Direction.Up,
-                    Center = new Vector3(actualExtents.X * Math.Abs(door.Dir.Y), DoorExtents.Y + FloorExtents.Y,
-                        actualExtents.Z * Math.Abs(door.Dir.X))
+                    Center = new Vector3(FloorExtents.X * Math.Abs(door.Dir.Y), FloorExtents.Y,
+                        FloorExtents.Z * Math.Abs(door.Dir.X))
                 };
                 if (cell == null) continue;
                 cell.Decorations.Add(doorData);
@@ -158,6 +153,7 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                 }
 
             }
+
             //pillar placement
             foreach (var cell in dictionary.Values)
             {
@@ -174,9 +170,7 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                         cell.Decorations.Add(new DecorationData
                         {
                             Type = DecorationType.Pillar,
-                            Center = new Vector3(-PillarExtents.X, PillarExtents.Y + FloorExtents.Y,
-                                -PillarExtents.Z),
-                            Extents = PillarExtents
+                            Center = new Vector3(0, PillarHeight, 0),
                         });
                     }
 
@@ -187,9 +181,7 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                         cell.Decorations.Add(new DecorationData
                         {
                             Type = DecorationType.Pillar,
-                            Center = new Vector3(PillarExtents.X, PillarExtents.Y + FloorExtents.Y,
-                                -PillarExtents.Z),
-                            Extents = PillarExtents
+                            Center = new Vector3(FloorExtents.X, PillarHeight, 0),
                         });
                     }
                 }
@@ -201,9 +193,8 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                     cell.Decorations.Add(new DecorationData
                     {
                         Type = DecorationType.Pillar,
-                        Center = new Vector3(-PillarExtents.X, PillarExtents.Y + FloorExtents.Y,
-                            PillarExtents.Z),
-                        Extents = PillarExtents
+                        Center = new Vector3(0, PillarHeight,
+                            FloorExtents.Z),
                     });
                 }
 
@@ -214,9 +205,8 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService
                     cell.Decorations.Add(new DecorationData
                     {
                         Type = DecorationType.Pillar,
-                        Center = new Vector3(PillarExtents.X, PillarExtents.Y + FloorExtents.Y,
-                            PillarExtents.Z),
-                        Extents = PillarExtents
+                        Center = new Vector3(FloorExtents.X, PillarHeight,
+                            FloorExtents.Z),
                     });
                 }
             }

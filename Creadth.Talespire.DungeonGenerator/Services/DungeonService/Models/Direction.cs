@@ -14,6 +14,19 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService.Models
 
     public static class DirectionExtensions
     {
+        public static byte ToAssetDirection(this Direction dir)
+        {
+            return dir switch
+            {
+                Direction.Left => 0,
+                Direction.Up => 6,
+                Direction.Right => 12,
+                Direction.Down => 18,
+                _ => throw new ArgumentOutOfRangeException(nameof(dir), dir, null)
+            };
+        }
+
+
         public static Direction GetOppositeDirection(this Direction dir)
         {
             return (Direction) ((8 + (int) dir) % 16);

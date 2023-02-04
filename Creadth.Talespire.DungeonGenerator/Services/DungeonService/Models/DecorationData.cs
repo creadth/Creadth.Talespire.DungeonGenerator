@@ -6,7 +6,6 @@ namespace Creadth.Talespire.DungeonGenerator.Services.DungeonService.Models
     {
         public DecorationType Type { get; set; }
         public Vector3 Center { get; set; }
-        public Vector3 Extents { get; set; }
         public Direction Direction { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-@import "~@angular/material/prebuilt-themes/indigo-pink.css";
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
 
 a {
   color: #0366d6;
@@ -20,11 +20,11 @@ html, body {
 
 body {
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: Roboto, "Helvetica Neue", sans-serif ;
 }
 
 .card.page {
-  min-width: 20vh;
+  min-width: 20vw;
   max-height: 80vh;
   overflow-y: auto;
 }

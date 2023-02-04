@@ -44,6 +44,7 @@ namespace Creadth.Talespire.DungeonGenerator.Controllers
         [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Get(IFormFile file, [FromQuery] int scale)
         {
+
             var dungeonData = await JsonSerializer.DeserializeAsync<DungeonData>(file.OpenReadStream(), new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -74,36 +75,5 @@ namespace Creadth.Talespire.DungeonGenerator.Controllers
             }
             return Ok(_slabService.GenerateSlab(_dungeonService.ConvertDungeonToSlab(dungeonData)));
         }
-
-        /// <summary>
-        /// Convert Slab to Json
-        /// </summary>
-        /// <param name="data">Slab in TS</param>
-        /// <returns></returns>
-        [HttpPost, Route("export/json")]
-        [ProducesResponseType(typeof(SlabModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-        public IActionResult GetData([FromBody] string data)
-        {
-            var slab = _slabService.ReadSlab(data);
-            if (slab == null) return BadRequest();
-            return Ok(slab);
-        }
-
-        /// <summary>
-        /// Export JSON data to slab string
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        [HttpPost, Route("import/json")]
-        [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-        public IActionResult GetSlab([FromBody] SlabModel model)
-        {
-            var slabString = _slabService.GenerateSlab(model);
-            if (string.IsNullOrEmpty(slabString)) return BadRequest();
-            return Ok(slabString);
-        }
-
     }
 }
