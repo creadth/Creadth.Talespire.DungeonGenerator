@@ -1,17 +1,15 @@
 using System;
 using System.Net;
 using Creadth.Talespire.DungeonGenerator.Framework;
-using Creadth.Talespire.DungeonGenerator.Services;
 using Creadth.Talespire.DungeonGenerator.Services.DungeonService;
 using Creadth.Talespire.DungeonGenerator.Services.SlabService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SpaServices.AngularCli;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
 
 namespace Creadth.Talespire.DungeonGenerator
 {
@@ -42,19 +40,18 @@ namespace Creadth.Talespire.DungeonGenerator
             services.AddScoped<SlabService>();
             services.AddSpaStaticFiles(x => x.RootPath = "client/dist");
             services.AddControllers(x => x.Conventions.Add(new ApiRouteConvention()))
-                .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
                 .AddJsonOptions(x =>
                 {
                     x.JsonSerializerOptions.Converters.Add(new Vector3Serializer());
                 });
-            services.AddSwaggerDocument(x =>
+
+            services.AddEndpointsApiExplorer();
+            services.AddSwaggerGen(x => x.SwaggerDoc("v1", new OpenApiInfo
             {
-                x.DocumentName = "api";
-                x.Title = "Creadth | TS";
-                x.Version = "0.0.0";
-                x.GenerateExamples = false;
-                x.GenerateEnumMappingDescription = true;
-            });
+                Version = "0.0.1",
+                Title = "Creadth TS",
+            }));
+
             services
                 .AddHealthChecks();
         }
@@ -67,8 +64,9 @@ namespace Creadth.Talespire.DungeonGenerator
             {
                 app.UseDeveloperExceptionPage();
             }
-            app.UseOpenApi();
-            app.UseSwaggerUi3(x => x.EnableTryItOut = false);
+            app.UseSwagger();
+            app.UseSwaggerUI();
+
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>
